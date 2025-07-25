@@ -1,0 +1,74 @@
+---
+- name: Configure OPS445 Linux VM
+  hosts: vmlab
+  become: yes         
+  vars:
+    seneca_id: ypark68    
+
+  tasks:
+    - name: Update Apache httpd package
+      yum:
+        name: httpd
+        state: latest
+
+    - name: Install EPEL repository
+      yum:
+        name: epel-release
+        state: present
+
+    - name: Remove tree package
+      yum:
+        name: tree
+        state: absent
+
+    - name: Set hostname to Seneca ID
+      hostname:
+        name: ypark68
+
+    - name: Create new user with sudo access
+      user:
+        name: ypark68
+        groups: wheel
+        append: yes
+        state: present
+        create_home: yes
+
+    - name: Allow passwordless sudo for wheel group
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: Add public SSH keys to the new user
+      authorized_key:
+        user: ypark68
+        state: present
+        key: "{{ lookup('file', '/home/ypark68/.ssh/id_rsa.pub') }}"
+
+    - name: Ensure .ssh directory exists for new user
+      file:
+        path: /home/ypark68/.ssh
+        state: directory
+        owner: ypark68
+        group: ypark68
+        mode: 0700
+
+    - name: Create ops445 lab directories
+      file:
+        path: /home/ypark68/ops445/lab{{ item }}
+        state: directory
+        owner: ypark68
+        group: ypark68
+        mode: 0755
+      loop:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+
